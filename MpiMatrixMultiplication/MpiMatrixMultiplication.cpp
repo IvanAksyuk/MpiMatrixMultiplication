@@ -13,7 +13,7 @@ int main(int argc, char** argv)
      int N = 1000;
      int K = 1000;
 
-    Matrix A(1.0, M, N);
+     Matrix A(1.0, M, N);
     Matrix B(1.0, N, K);
     
     int MK = M * K;
@@ -31,57 +31,44 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
     srand(time(NULL) + ProcRank);
-    //std::cout << ProcNum << "\n";
+  
     if (ProcRank == 0) {
-        // Действия, выполняемые только процессом с рангом 0
+      
         Matrix C(M, K);
 
         
-        for (int i = 0; i < MK / ProcNum+(MK%ProcNum); i++) {
+        for (int i = 0; i < MK / ProcNum; i++) {
             double C_ij = 0;
             int index_1 = i / K;
             int index_2 = i % K;
-            //std::cout << i << "\n";
+           
             for (int j = 0; j < N; j++) {
                 C_ij += A.getAij(index_1, j) * B.getAij(j, index_2);
                
             }
-            //std::cout << ProcRank << " ";
-            //if((i+1)%K==0) std::cout <<"\n";
+          
             C.setAij(C_ij, index_1, index_2);
         }
 
-        for (int i = MK-MK%ProcNum; i < MK; i++) {
-            double C_ij = 0;
-            int index_1 = i / K;
-            int index_2 = i % K;
-            //std::cout << index_1<<" "<<index_2 << "\n";
-            for (int j = 0; j < N; j++) {
-                C_ij += A.getAij(index_1, j) * B.getAij(j, index_2);
-
-            }
-            //std::cout << ProcRank << " ";
-            //if((i+1)%K==0) std::cout <<"\n";
-            //std::cout << C_ij << "\n";
-            C.setAij(C_ij, index_1, index_2);
-        }
-       
+      
         
        for (int i = 1; i < ProcNum; i++) {
-           double* C_ij = new double[MK/ProcNum];
-           for (int j = 0; j < MK / ProcNum; j++) { C_ij[j] = 0; 
-           //printf("%3f", C_ij[j]);
-           }
+          
            MPI_Recv(&RecvRank, 1, MPI_INT, MPI_ANY_SOURCE,  MPI_ANY_TAG, MPI_COMM_WORLD, &Status);
+           bool T = ((MK % ProcNum) >= RecvRank);
+           double* C_ij = new double[MK / ProcNum+T];
+
+           for (int j = 0; j < MK / ProcNum+T; j++) {
+               C_ij[j] = 0;
+               //printf("%3f", C_ij[j]);
+           }
            
-           MPI_Recv(C_ij, (int)(MK/ProcNum), MPI_DOUBLE, MPI_ANY_SOURCE,
+           MPI_Recv(C_ij, (int)(MK/ProcNum+T), MPI_DOUBLE, MPI_ANY_SOURCE,
                     MPI_ANY_TAG, MPI_COMM_WORLD, &Status);
-           //std::cout << RecvRank << " ";
-           //std::cout << C_ij[0] << "\n";
-           for (int j = 0+ RecvRank * (MK / ProcNum),k=0; j < 0 + (RecvRank + 1) * (MK / ProcNum); j++,k++) {
-               //std::cout << RecvRank << " ";
-               //if ((j + 1) % K == 0) std::cout << "\n";
-               //std::cout <<RecvRank<<" "<< j / K << " " << j % K << "\n";
+           
+           //std::cout <<RecvRank<<" "<< T * (RecvRank - 1) + (!T) * (MK % ProcNum) + RecvRank * (MK / ProcNum) << " " << T * (RecvRank)+!T * (MK % ProcNum) + (RecvRank + 1) * (MK / ProcNum) << std::endl;
+           for (int j = T * (RecvRank - 1) + (!T) * (MK % ProcNum) + RecvRank * (MK / ProcNum),k=0; j < T * (RecvRank)+!T * (MK % ProcNum) + (RecvRank + 1) * (MK / ProcNum); j++,k++) {
+              
                C.setAij(C_ij[k], j/K, j%K);
            }
 
@@ -95,15 +82,17 @@ int main(int argc, char** argv)
         //C.info();
     }
     else {
-        //std::cout << ProcRank << "\n";
-        //std::cout << 123 << "\n";
-        double* C_ij = new double[MK / ProcNum];
-        for (int j = 0; j < MK / ProcNum; j++) {
+       
+        bool T = ((MK % ProcNum) >= ProcRank);
+
+        //std::cout << T << "\n";
+        double* C_ij = new double[MK / ProcNum+T];
+        for (int j = 0; j < MK / ProcNum+T; j++) {
             C_ij[j] = 0;
         }
         
         
-        for (int i = 0+ProcRank * (MK / ProcNum),k=0; i < 0+ (ProcRank + 1) * (MK / ProcNum); i++,k++) {
+        for (int i = T*(ProcRank-1)+(!T)*(MK%ProcNum)+ProcRank * (MK / ProcNum),k=0; i < T * (ProcRank)+!T*(MK % ProcNum) + (ProcRank + 1) * (MK / ProcNum); i++,k++) {
             
             int index_1 = i / K;
             int index_2 = i % K;
@@ -118,7 +107,7 @@ int main(int argc, char** argv)
         }
             
         MPI_Send(&ProcRank, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-        MPI_Send(C_ij, (int)(MK/ProcNum), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(C_ij, (int)(MK/ProcNum+T), MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
           
        
         
