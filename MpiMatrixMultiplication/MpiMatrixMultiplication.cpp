@@ -9,17 +9,22 @@
 
 int main(int argc, char** argv)
 {   
-     int M = 10000;
-     int N = 1000;
-     int K = 1000;
+     const int M = 10000;
+     const int N = 1000;
+     const int K = 1000;
 
-     Matrix A(1.0, M, N);
-    Matrix B(1.0, N, K);
+    Matrix<M,N> A(0.1);
+    Matrix<N,K> B(0.5);
     
     int MK = M * K;
-    
+    /*
+    A.info(5);
+    B.info(5);
 
-  
+    auto C = dot(A, B);
+    std::cout << typeid(C).name() << "\n";
+    C.info(5);
+    */
     double time_spent = 0.0;
     //double start, end;
     int ProcNum, ProcRank, RecvRank;
@@ -31,10 +36,11 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
     srand(time(NULL) + ProcRank);
+    
   
     if (ProcRank == 0) {
       
-        Matrix C(M, K);
+        Matrix<M,K> C;
 
         
         for (int i = 0; i < MK / ProcNum; i++) {
@@ -43,11 +49,11 @@ int main(int argc, char** argv)
             int index_2 = i % K;
            
             for (int j = 0; j < N; j++) {
-                C_ij += A.getAij(index_1, j) * B.getAij(j, index_2);
+                C_ij += A(index_1, j) * B(j, index_2);
                
             }
           
-            C.setAij(C_ij, index_1, index_2);
+            C(index_1, index_2)= C_ij;
         }
 
       
@@ -60,16 +66,15 @@ int main(int argc, char** argv)
 
            for (int j = 0; j < MK / ProcNum+T; j++) {
                C_ij[j] = 0;
-               //printf("%3f", C_ij[j]);
+               
            }
            
            MPI_Recv(C_ij, (int)(MK/ProcNum+T), MPI_DOUBLE, MPI_ANY_SOURCE,
                     MPI_ANY_TAG, MPI_COMM_WORLD, &Status);
            
-           //std::cout <<RecvRank<<" "<< T * (RecvRank - 1) + (!T) * (MK % ProcNum) + RecvRank * (MK / ProcNum) << " " << T * (RecvRank)+!T * (MK % ProcNum) + (RecvRank + 1) * (MK / ProcNum) << std::endl;
-           for (int j = T * (RecvRank - 1) + (!T) * (MK % ProcNum) + RecvRank * (MK / ProcNum),k=0; j < T * (RecvRank)+!T * (MK % ProcNum) + (RecvRank + 1) * (MK / ProcNum); j++,k++) {
+             for (int j = T * (RecvRank - 1) + (!T) * (MK % ProcNum) + RecvRank * (MK / ProcNum),k=0; j < T * (RecvRank)+!T * (MK % ProcNum) + (RecvRank + 1) * (MK / ProcNum); j++,k++) {
               
-               C.setAij(C_ij[k], j/K, j%K);
+               C(j/K, j%K)= C_ij[k];
            }
 
            }
@@ -79,7 +84,7 @@ int main(int argc, char** argv)
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
 
         std::cout << time_spent << ","<< std::endl;
-        //C.info();
+        C.info(10);
     }
     else {
        
@@ -92,14 +97,14 @@ int main(int argc, char** argv)
         }
         
         
-        for (int i = T*(ProcRank-1)+(!T)*(MK%ProcNum)+ProcRank * (MK / ProcNum),k=0; i < T * (ProcRank)+!T*(MK % ProcNum) + (ProcRank + 1) * (MK / ProcNum); i++,k++) {
+        for (int i = T*(ProcRank-1)+(!T)*(MK%ProcNum)+ProcRank * (MK / ProcNum),k=0; i < T * (ProcRank)+(!T)*(MK % ProcNum) + (ProcRank + 1) * (MK / ProcNum); i++,k++) {
             
             int index_1 = i / K;
             int index_2 = i % K;
             //std::cout << ProcRank << " " << index_1 << " " << index_2 << "\n";
             for (int j = 0; j < N; j++) {
                 
-                C_ij[k] += A.getAij(index_1, j) * B.getAij(j, index_2);
+                C_ij[k] += A(index_1, j) * B(j, index_2);
             }
             
             
@@ -113,40 +118,7 @@ int main(int argc, char** argv)
         
     }
         MPI_Finalize();
-   
-
-   
-
-    
-    //
-
-   
-
-    
-
-    // рассчитать прошедшее время, найдя разницу (end - begin) и
-    // деление разницы на CLOCKS_PER_SEC для перевода в секунды
-    /*
-    int N = 200;
-    Matrix A(1.0, N,N);
-    A.info();
-    Matrix B(1.0, N, N);
-    B.info();
-    Matrix C;
-    
-    
-    C = A.dot(B);
-  
-   
-    
-
-    
-    C.info();
-
-
-  
-    */
-    
+     
     return 0;
 }
 

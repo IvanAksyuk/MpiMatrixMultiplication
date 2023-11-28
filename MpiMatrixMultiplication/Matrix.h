@@ -2,50 +2,78 @@
 #include <iostream>
 #include <string.h>
 
-class Matrix {
+template<int rows=1, int cols=1>
+struct Matrix 
+{
 
 
-	int rows, cols;
+	
 	double** A;
 	
-public:
-
-	Matrix();
-	Matrix(double** A_, int shape_[2]);
-	Matrix(int shape_[2]);
-	Matrix(double a, int shape_[2]);
-	Matrix(double a, int m, int n);
-	Matrix(double** A_, int m, int n);
-	Matrix(int m, int n);
-	Matrix(char type, int m, int n);
-
-	void setAij(double Aij, int i, int j);
-
 	
-	void setA(double** A_);
-	void setA(double a);
-
-
-	double getAij(int i, int j) {
-		return A[i][j];
+	Matrix(double** A_)
+	{
+		A = new double* [rows];
+		for (int i = 0; i < rows; i++) {
+			A[i] = new double[cols];
+			for (int j = 0; j < cols; j++) {
+				A[i][j] = A_[i][j];
+			}
+		}
 	}
-	int* getShape() {
 		
-		return new int[2] {rows, cols};
+	Matrix(double a) {
+		A = new double* [rows];
+		for (int i = 0; i < rows; i++) {
+			A[i] = new double[cols];
+			for (int j = 0; j < cols; j++) {
+				A[i][j] = a;
+			}
+		}
 	}
+	Matrix() : Matrix((double)0) {}
+	
+	const double& operator()(int i, int j) const{
+	 return A[i][j];
+	 }
 
-	void info() {
+	double& operator()(int i, int j) { return A[i][j]; }
+	
+	
+
+	void info(int shape_of_out) {
+
 		std::cout << "Matrix:" << "\n";
-		std::cout << "Shape: " << Matrix::getShape()[0] << " " << Matrix::getShape()[1] << "\n";
-		for (int i = 0; i < std::min(rows, rows); i++) {
-			for (int j = 0; j < std::min(cols, cols); j++) {
-				std::cout << getAij(i,j) << " ";
+		std::cout << "Shape: " << rows << " " << cols << "\n";
+		for (int i = 0; i < std::min(shape_of_out, rows); i++) {
+			for (int j = 0; j < std::min(shape_of_out, cols); j++) {
+				std::cout << (*this)(i, j) << " ";
 			}
 			std::cout << "\n";
 		}
-		
 	}
 
-	Matrix dot(Matrix B);
+	
+	
 
 };
+
+
+template<int M=1, int N=1, int K=1>
+Matrix<M, K> dot(Matrix<M, N> A, Matrix<N, K> B)
+{
+	Matrix<M, K> C;
+
+	for (int i = 0; i < M; i++) {
+		for (int j = 0; j < K; j++) {
+			double c = 0;
+			for (int k = 0; k < N; k++) {
+				c += A(i, k) * B(k, j);
+			}
+			C(i, j) = c;
+		}
+	}
+
+
+	return C;
+}
