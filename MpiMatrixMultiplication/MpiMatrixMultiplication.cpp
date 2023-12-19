@@ -9,22 +9,15 @@
 
 int main(int argc, char** argv)
 {   
-     const int M = 10000;
+     const int M = 1000;
      const int N = 1000;
-     const int K = 1000;
+     const int K = 2000;
 
     Matrix<M,N> A(0.1);
     Matrix<N,K> B(0.5);
     
     int MK = M * K;
-    /*
-    A.info(5);
-    B.info(5);
-
-    auto C = dot(A, B);
-    std::cout << typeid(C).name() << "\n";
-    C.info(5);
-    */
+   
     double time_spent = 0.0;
     //double start, end;
     int ProcNum, ProcRank, RecvRank;
@@ -35,7 +28,7 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
-    srand(time(NULL) + ProcRank);
+    //srand(time(NULL) + ProcRank);
     
   
     if (ProcRank == 0) {
@@ -83,7 +76,7 @@ int main(int argc, char** argv)
         clock_t end = clock();
         time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
 
-        std::cout << time_spent << ","<< std::endl;
+        std::cout <<"Time: "<< time_spent << std::endl;
         C.info(10);
     }
     else {
@@ -121,14 +114,3 @@ int main(int argc, char** argv)
      
     return 0;
 }
-
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
-
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.
